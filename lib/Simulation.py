@@ -1,11 +1,13 @@
 from enum import Enum
 
+import sys as sys
 import numpy as np
 from lib.AABB import SweepPruneSystem
 from lib.constants import ZERO_VEC, Axes, npdarr, npiarr
-from lib.functions import distance
+from lib.functions import distance, calc_distance
 from lib.Object import Object
 from lib.Particle import Particle, elastic_collision, untangle_spheres
+from lib.Wall import Wall, wall_collision
 from tqdm import tqdm
 
 
@@ -93,12 +95,8 @@ class Simulation:
         self.num_particles: int = len(self.particle_list)
 
     def setup_data_matrices(self) -> None:
-        self.pos_matrix: npdarr = np.zeros(
-            (self.num_steps, self.num_particles, 3)
-        )
-        self.vel_matrix: npdarr = np.zeros(
-            (self.num_steps, self.num_particles, 3)
-        )
+        self.pos_matrix: npdarr = np.zeros((self.num_steps, self.num_particles, 3))
+        self.vel_matrix: npdarr = np.zeros((self.num_steps, self.num_particles, 3))
         # self.collision_matrix: npiarr = np.zeros(
         #     (self.num_steps, self.num_particles), dtype=int
         # )
@@ -118,9 +116,7 @@ class Simulation:
         ):
             particle.vel[axis] = -1 * particle.vel[axis]
 
-    def resolve_periodic_condition(
-        self, axis: Axes, particle: Particle
-    ) -> None:
+    def resolve_periodic_condition(self, axis: Axes, particle: Particle) -> None:
         if not (0 <= particle.pos[axis] <= self.sides[axis]):
             new_pos: npdarr = particle.pos
             new_pos[axis] = new_pos[axis] % self.sides[axis]
@@ -146,6 +142,20 @@ class Simulation:
                     obj_1.vel, obj_2.vel = elastic_collision(obj_1, obj_2)
                     # self.collision_matrix[time, i] = 1
                     # self.collision_matrix[time, j] = 1
+            if isinstance(obj_1, Particle) and isinstance(obj_2, Wall):
+                # p = obj_1.pos
+                # q = obj_2.pos
+                # u = obj_2.normal_vec
+                # distance Formular for
+                d = calc_distance(obj_1.pos, obj_2.pos, obj_2.normal_vec)
+                print("Distanz zum Punkt: " + str(d))
+                if d <= obj_1.rad * 2:
+                    # sys.exit("ICH WURDE GETROFFEN")
+                    print("ICH TREFFE DIE WAND AHHHHHH")
+                    # obj_1.vel = np.array([-10,0,0])
+                    # print(wall_collision(obj_1, obj_2))
+                    obj_1.vel = wall_collision(obj_1, obj_2)
+                    # print(obj_1.vel)
 
     def update_data_matrices(self) -> None:
         for p_idx, particle in enumerate(self.particle_list):
@@ -153,9 +163,7 @@ class Simulation:
             self.vel_matrix[self.step, p_idx] = particle.vel
 
     def run(self) -> None:
-        for step, _ in enumerate(
-            tqdm(self.time_series, desc="Running simulation")
-        ):
+        for step, _ in enumerate(tqdm(self.time_series, desc="Running simulation")):
             self.step = step
             self.advance_particles()
             self.resolve_boundries()
@@ -167,9 +175,7 @@ class Simulation:
         masses_data: npdarr = np.array(
             [particle.mass for particle in self.particle_list]
         )
-        radii_data: npdarr = np.array(
-            [particle.rad for particle in self.particle_list]
-        )
+        radii_data: npdarr = np.array([particle.rad for particle in self.particle_list])
         time_data: npdarr = np.array([self.dt, self.max_t])
         np.savez(
             filename,
