@@ -152,10 +152,9 @@ class Simulation:
                 # u = obj_2.normal_vec
                 # distance Formular for planes from point
                 d = calc_distance(obj_1.pos, obj_2.normal_vec, obj_2.distance_origin)
-                print("Distanz zum Punkt: " + str(d))
                 if d <= obj_1.rad:
                     # sys.exit("ICH WURDE GETROFFEN")
-                    print("ICH TREFFE DIE WAND AHHHHHH")
+                    print("Collision with Wall")
                     # obj_1.vel = np.array([-10,0,0])
                     # print(wall_collision(obj_1, obj_2))
                     obj_1.vel = wall_collision(obj_1, obj_2)

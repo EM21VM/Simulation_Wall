@@ -32,14 +32,19 @@ if __name__ == "__main__":
     )
     simulation.add_object(par)
     wal = Wall(
-        pos=np.array([500, 500, 500]),
-        plains_vec=np.array([250, 250, 250]),
-        plains_vec_2=np.array([10, 3, 0]),
+        pos=np.array([0,0,0]),
+        plains_vec=np.array([1,0,0]),
+        plains_vec_2=np.array([0, 0, 1]),
+    )
+    wal2 = Wall(
+        pos=np.array([500, 500,500]),
+        plains_vec=np.array([250, 500, 500]),
+        plains_vec_2=np.array([500, 250, 500]),
         offset=50,
     )
     simulation.add_object(wal)
+    simulation.add_object(wal2)
     simulation.setup_system()
-
     fig = plt.figure()
     ax = fig.add_subplot(111, projection="3d")
     ax.set_xlim(0, L)
@@ -51,9 +56,9 @@ if __name__ == "__main__":
     ax.set_xlabel("X")
     ax.set_ylabel("Y")
     ax.set_zlabel("Z")
-    # ax.set_xticks([])
-    # ax.set_yticks([])
-    # ax.set_zticks([])
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.set_zticks([])
     ax.set_aspect("equal")
     frames_label = ax.annotate(f"frame: 0/{simulation.num_steps:04d}", xy=(10, L - 10))
     overlaps_label = ax.annotate("overlaps: []", (20, 20))

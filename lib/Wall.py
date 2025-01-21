@@ -29,7 +29,7 @@ class Wall(Object):
         self.plains_vec_2 = plains_vec_2
         print("P1: " + str(plains_vec) + " P2: " + str(plains_vec_2))
         print("AB: " + str(pos - plains_vec) + "AC: " + str(pos - plains_vec_2))
-        self.normal_vec = cross_vec(pos - plains_vec, pos - plains_vec_2)
+        self.normal_vec = cross_vec(plains_vec - pos, plains_vec_2 - pos)
         self.distance_origin = -pos.dot(self.normal_vec)
         self.offset = offset
         print("Normalvector: " + str(self.normal_vec))
@@ -125,7 +125,6 @@ def plotWall(
     y = np.linspace(x_min, x_max, 100)
     x, y = np.meshgrid(x, y)
     if wall.normal_vec[2] != 0:
-        print("1")
         z = (
             -wall.distance_origin - wall.normal_vec[0] * x - wall.normal_vec[1] * y
         ) / wall.normal_vec[2]
@@ -136,7 +135,6 @@ def plotWall(
             return
         ax.plot_surface(x, y, z, alpha=0.7)
     elif wall.normal_vec[1] != 0:
-        print("2")
         x = np.linspace(x_min, x_max, 100)
         z = np.linspace(z_min, z_max, 100)
         X, Z = np.meshgrid(x, z)
@@ -147,7 +145,6 @@ def plotWall(
         if not np.any(mask):
             return
         ax.plot_surface(X, Y, Z, alpha=0.7)
-        print("3")
         y = np.linspace(y_min, y_max, 100)
         z = np.linspace(z_min, z_max, 100)
         y, z = np.meshgrid(y, z)
