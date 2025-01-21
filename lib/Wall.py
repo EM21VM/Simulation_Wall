@@ -7,7 +7,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from lib.Particle import Particle
 from lib.constants import ZERO_VEC, npdarr, Axes
 from lib.Object import Object
-from lib.functions import cross_vec, skalarproduct
+from lib.functions import cross_vec
 
 
 class Wall(Object):
@@ -41,9 +41,18 @@ class Wall(Object):
 
 def wall_collision(p1: Particle, w1: Wall) -> npdarr:
     v = p1.vel
-    n = w1.normal_vec
-    # print("Vel: " + str(v) + "Normalvector: " + str(n) + "NEW Vel: " + str(v - skalarproduct(v,n) * n))
-    return np.array(v - 2 * v.dot(n) * n)
+    n = w1.normal_vec / np.linalg.norm(w1.normal_vec)
+    if(np.linalg.norm(v) == 0):
+        print("The velocity is the zero vector")
+    print(
+        "Vel: "
+        + str(v)
+        + "Normalvector: "
+        + str(n)
+        + "NEW Vel: "
+        + str(v - 2 * np.dot(v, n) * n)
+    )
+    return np.array(v - 2 * np.dot(v, n) * n)
 
 
 def get_bbox_pts(wall: Wall):
@@ -120,28 +129,34 @@ def plotWall(
         z = (
             -wall.distance_origin - wall.normal_vec[0] * x - wall.normal_vec[1] * y
         ) / wall.normal_vec[2]
-        z = np.clip(z, z_min, z_max)
+        # z = np.clip(z, z_min, z_max)
+        mask = (z >= z_min) & (z <= z_max)
+        z = np.ma.masked_where(~mask, z)
+        if not np.any(mask):
+            return
         ax.plot_surface(x, y, z, alpha=0.7)
-        ax.scatter(
-            x=[wall.bbox.pts[0][0], wall.bbox.pts[1][0]],
-            y=[wall.bbox.pts[0][1], wall.bbox.pts[1][1]],
-            z=[wall.bbox.pts[0][2], wall.bbox.pts[1][2]],
-        )
     elif wall.normal_vec[1] != 0:
         print("2")
         x = np.linspace(x_min, x_max, 100)
         z = np.linspace(z_min, z_max, 100)
         X, Z = np.meshgrid(x, z)
         Y = (-wall.normal_vec[0] * x - wall.distance_origin) / wall.normal_vec[1]
-        Y = np.clip(Y, y_min, y_max)
+        # Y = np.clip(Y, y_min, y_max)
+        mask = (Y >= y_min) & (Y <= y_max)
+        Y = np.ma.masked_where(~mask, Y)
+        if not np.any(mask):
+            return
         ax.plot_surface(X, Y, Z, alpha=0.7)
-    elif wall.normal_vec[0] != 0:
         print("3")
         y = np.linspace(y_min, y_max, 100)
         z = np.linspace(z_min, z_max, 100)
         y, z = np.meshgrid(y, z)
         x = np.full_like(x, -wall.distance_origin / wall.normal_vec[0])
-        x = np.clip(x, x_min, x_max)
+        # x = np.clip(x, x_min, x_max)
+        mask = (x >= x_min) & (x <= x_max)
+        x = np.ma.masked_where(~mask, x)
+        if not np.any(mask):
+            return
         ax.plot_surface(x, y, z, alpha=0.7)
     elif np.all(wall.normal_vec == 0):
         sys.exit("The Normalen Vector which was calculated is the Zero Vector")

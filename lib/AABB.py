@@ -129,7 +129,7 @@ if __name__ == "__main__":
     for center, radius, bbox in zip(centers, radii, bbox_list):
         circle_fill_color = "#00BBFF"
         if bbox.id in intersected_set:
-            circle_fill_color = f'{f"#{randint(0, 256**3):06x}"}'.upper()
+            circle_fill_color = f"{f'#{randint(0, 256**3):06x}'}".upper()
 
         circle = Circle(
             center,

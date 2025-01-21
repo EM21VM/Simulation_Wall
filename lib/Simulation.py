@@ -22,6 +22,7 @@ class Simulation:
 
     objects_list: list[Object] = list()
     particle_list: list[Particle] = list()
+    wall_list: list[Wall] = list()
     AABBs_overlaps: list[npiarr] = list()
     step: int = 0
 
@@ -42,6 +43,7 @@ class Simulation:
         return (
             f"Objects: {self.objects_list}, "
             f"Particles: {self.particle_list}, "
+            f"Walls: {self.wall_list}, "
             f"dt: {self.dt}, max time: {self.max_t}, "
             f"num steps: {self.num_steps}"
         )
@@ -54,6 +56,8 @@ class Simulation:
             self.objects_list.append(object)
             if isinstance(object, Particle):
                 self.particle_list.append(object)
+            if isinstance(object, Wall):
+                self.wall_list.append(object)
         except Exception as e:
             print(e)
 
@@ -108,9 +112,7 @@ class Simulation:
 
     def advance_particles(self) -> None:
         for particle in self.particle_list:
-            print("Bevor moving:" + str(particle.pos) + " " + str(particle.vel)) 
             particle.move(self.dt)
-            print("After moving:" + str(particle.pos) + " " + str(particle.vel))
 
     def resolve_boundry_bounce(self, axis: Axes, particle: Particle) -> None:
         if (particle.pos[axis] - particle.rad <= 0) or (
@@ -148,10 +150,10 @@ class Simulation:
                 # p = obj_1.pos
                 # q = obj_2.pos
                 # u = obj_2.normal_vec
-                # distance Formular for
-                d = calc_distance(obj_1.pos, obj_2.pos, obj_2.normal_vec)
+                # distance Formular for planes from point
+                d = calc_distance(obj_1.pos, obj_2.normal_vec, obj_2.distance_origin)
                 print("Distanz zum Punkt: " + str(d))
-                if d <= obj_1.rad * 2:
+                if d <= obj_1.rad:
                     # sys.exit("ICH WURDE GETROFFEN")
                     print("ICH TREFFE DIE WAND AHHHHHH")
                     # obj_1.vel = np.array([-10,0,0])
