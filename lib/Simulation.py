@@ -108,7 +108,9 @@ class Simulation:
 
     def advance_particles(self) -> None:
         for particle in self.particle_list:
+            print("Bevor moving:" + str(particle.pos) + " " + str(particle.vel)) 
             particle.move(self.dt)
+            print("After moving:" + str(particle.pos) + " " + str(particle.vel))
 
     def resolve_boundry_bounce(self, axis: Axes, particle: Particle) -> None:
         if (particle.pos[axis] - particle.rad <= 0) or (

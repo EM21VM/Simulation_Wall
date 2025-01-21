@@ -21,8 +21,8 @@ if __name__ == "__main__":
         sides=[L, L, L],
         boundaries=[Boundary.WALL, Boundary.WALL, Boundary.WALL],
     )
-    pos = np.array([0, 0, 0])
-    vel = np.array([0, -10, 0])
+    pos = np.array([L / 2, L / 2, L / 2])
+    vel = np.array([0, 100, 0])
     rad = 10
     par = Particle(
         pos=pos + rad,
@@ -68,23 +68,42 @@ if __name__ == "__main__":
     y0 = par.pos[1] + par.rad * np.sin(phi) * np.sin(theta)
     z0 = par.pos[2] + par.rad * np.cos(phi)
 
+    sphere_plots= []
     def init():
-        ax.plot_surface(x0, y0, z0, color=par.color)
-        return fig
+        global sphere_plots
+        sphere_plots.clear()
+        for particle in simulation.particle_list:
+            pos = particle.pos
+            sphere_plot = ax.plot_surface(
+                pos[0] + particle.rad * np.sin(phi) * np.cos(theta),
+                pos[1] + particle.rad * np.sin(phi) * np.sin(theta),
+                pos[2] + particle.rad * np.cos(phi),
+                color=particle.color,
+            )
+            sphere_plots.append(sphere_plot)
+        return sphere_plots
 
     def update_sphere_animation(frame):
-        frames_label.set_text(f"frame: {frame:04d}/{simulation.num_steps:04d}")
-        overlaps_label.set_text(f"overlaps:\n[{simulation.AABBs_overlaps[frame]}]")
-        ax.plot_surface(
-            x0 + frame * par.vel[0],
-            y0 + frame * par.vel[1],
-            z0 + frame * par.vel[2],
-            color=par.color,
-        )
-        return [frames_label]
+        global sphere_plots
+        for i, particle in enumerate(simulation.particle_list):
+            pos = simulation.pos_matrix[frame][i]
+            print(str(pos))
+            sphere_plots[i].remove()
+            sphere_plots[i] = ax.plot_surface(
+                pos[0] + particle.rad * np.sin(phi) * np.cos(theta),
+                pos[1] + particle.rad * np.sin(phi) * np.sin(theta),
+                pos[2] + particle.rad * np.cos(phi),
+                color=particle.color,
+            )
+            frames_label.set_text(f"frame: {frame}/{simulation.num_steps:04d}")
+        return sphere_plots
 
     simulation.run()
     animation = FuncAnimation(
-        fig=fig, func=update_sphere_animation, frames=simulation.num_steps, interval=1
+        fig=fig,
+        func=update_sphere_animation,
+        frames=simulation.num_steps,
+        interval=1,
+        init_func=init,
     )
     plt.show()
