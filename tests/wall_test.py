@@ -3,6 +3,7 @@ import sys
 
 import matplotlib.pyplot as plt
 import numpy as np
+import random
 from matplotlib.animation import FuncAnimation
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -13,37 +14,75 @@ from lib.Wall import Wall, plotWall
 if __name__ == "__main__":
     print("Testing the Wall class")
     L = 500.0
+    particle_num = 2
+    min_pos = 100
+    max_pos = 400
+    min_vel = 10
+    max_vel = 100
+    min_rad = 5
+    max_rad = 10
+    min_mass = 1
+    max_mass = 20
     simulation = Simulation(
         dt=0.05,
         max_t=50.0,
         sides=[L, L, L],
         boundaries=[Boundary.WALL, Boundary.WALL, Boundary.WALL],
     )
-    pos = np.array([L / 2, 0, L / 2])
-    vel = np.array([0, 100, 0])
-    rad = 10
-    par = Particle(
-        pos=pos + rad,
-        vel=vel,
-        rad=rad,
-        mass=1,
-        color="#00FF00",
-        opacity=1,
-    )
-    simulation.add_object(par)
-    wal = Wall(
-        pos=np.array([0,0,0]),
-        plains_vec=np.array([1,0,0]),
-        plains_vec_2=np.array([0, 0, 1]),
-    )
-    wal2 = Wall(
-        pos=np.array([500, 500,500]),
-        plains_vec=np.array([250, 500, 500]),
-        plains_vec_2=np.array([500, 250, 500]),
-        offset=50,
-    )
-    simulation.add_object(wal)
-    simulation.add_object(wal2)
+    Particles = []
+    for i in range(particle_num):
+        while True:  
+            rad = random.randint(min_rad, max_rad)
+            mass = random.randint(min_mass, max_mass)
+            pos = np.array(
+                [
+                    random.randint(min_pos + rad, max_pos - rad),
+                    random.randint(min_pos + rad, max_pos - rad),
+                    random.randint(min_pos + rad, max_pos - rad),
+                ]
+            )
+            vel = np.array(
+                [
+                    random.randint(min_vel, max_vel),
+                    random.randint(min_vel, max_vel),
+                    random.randint(min_vel, max_vel),
+                ]
+            )
+            overlap = False
+            for plotted_particle in Particles:
+                distance = np.linalg.norm(pos - plotted_particle.pos)
+                if distance < rad + plotted_particle.rad:
+                    overlap = True
+                    break
+            if not overlap:
+                Particles.append(Particle(pos=pos, vel=vel, rad=rad, mass=mass))
+                break
+
+    simulation.add_objects(Particles)
+    Walls = [
+        Wall(
+            pos=np.array([100, 0, 0]),
+            plains_vec=np.array([100, 500, 0]),
+            plains_vec_2=np.array([100, 0, 500]),
+        ),
+        Wall(
+            pos=np.array([0, 0, 100]),
+            plains_vec=np.array([500, 0, 100]),
+            plains_vec_2=np.array([0, 500, 100]),
+        ),
+        Wall(
+            pos=np.array([400, 0, 0]),
+            plains_vec=np.array([400, 0, 500]),
+            plains_vec_2=np.array([400, 500, 0]),
+        ),
+        Wall(
+            pos=np.array([0, 0, 400]),
+            plains_vec=np.array([500, 0, 400]),
+            plains_vec_2=np.array([0, 500, 400]),
+        ),
+    ]
+    simulation.add_objects(Walls)
+
     simulation.setup_system()
     fig = plt.figure()
     ax = fig.add_subplot(111, projection="3d")
@@ -69,6 +108,7 @@ if __name__ == "__main__":
     phi = np.linspace(0, np.pi, 100)
     theta, phi = np.meshgrid(theta, phi)
     sphere_plots = []
+
     def init():
         global sphere_plots
         sphere_plots.clear()
@@ -101,7 +141,7 @@ if __name__ == "__main__":
         fig=fig,
         func=update_sphere_animation,
         frames=simulation.num_steps,
-        interval=10,
+        interval=1,
         init_func=init,
     )
     plt.show()

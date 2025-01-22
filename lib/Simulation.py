@@ -149,16 +149,12 @@ class Simulation:
             if isinstance(obj_1, Particle) and isinstance(obj_2, Wall):
                 # p = obj_1.pos
                 # q = obj_2.pos
-                # u = obj_2.normal_vec
+                # n = obj_2.normal_vec
                 # distance Formular for planes from point
                 d = calc_distance(obj_1.pos, obj_2.normal_vec, obj_2.distance_origin)
                 if d <= obj_1.rad:
-                    # sys.exit("ICH WURDE GETROFFEN")
-                    print("Collision with Wall")
-                    # obj_1.vel = np.array([-10,0,0])
-                    # print(wall_collision(obj_1, obj_2))
                     obj_1.vel = wall_collision(obj_1, obj_2)
-                    # print(obj_1.vel)
+
 
     def update_data_matrices(self) -> None:
         for p_idx, particle in enumerate(self.particle_list):

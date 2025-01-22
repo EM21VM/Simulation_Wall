@@ -1,5 +1,4 @@
 
-from matplotlib.axis import Axis
 import numpy as np
 from lib.constants import ZERO_VEC, npdarr
 from lib.functions import normalize

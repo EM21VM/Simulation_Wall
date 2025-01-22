@@ -21,6 +21,8 @@ class Wall(Object):
         pos: npdarr = np.copy(ZERO_VEC),
         plains_vec: npdarr = np.copy(ZERO_VEC),
         plains_vec_2: npdarr = np.copy(ZERO_VEC),
+        norm_vec: npdarr = np.array([ZERO_VEC]),
+        dis_origin: float = 0,
         offset: float = 0,
     ) -> None:
         print(f"start_pos: {pos}")
@@ -30,7 +32,11 @@ class Wall(Object):
         print("P1: " + str(plains_vec) + " P2: " + str(plains_vec_2))
         print("AB: " + str(pos - plains_vec) + "AC: " + str(pos - plains_vec_2))
         self.normal_vec = cross_vec(plains_vec - pos, plains_vec_2 - pos)
+        self.normal_vec = self.normal_vec / np.linalg.norm(self.normal_vec)
         self.distance_origin = -pos.dot(self.normal_vec)
+        if not np.all(norm_vec == 0) and dis_origin != 0:
+            self.normal_vec = norm_vec
+            self.distance_origin = dis_origin
         self.offset = offset
         print("Normalvector: " + str(self.normal_vec))
         print("Distance to origin: " + str(self.distance_origin))
@@ -39,76 +45,55 @@ class Wall(Object):
         super().__init__(pos, bbox_pts=bbox_pts)
 
 
-def wall_collision(p1: Particle, w1: Wall) -> npdarr:
-    v = p1.vel
-    n = w1.normal_vec / np.linalg.norm(w1.normal_vec)
-    if(np.linalg.norm(v) == 0):
+def wall_collision(particle: Particle, wall: Wall) -> npdarr:
+    v = particle.vel
+    n = wall.normal_vec
+    if np.all(wall.normal_vec == 0):
         print("The velocity is the zero vector")
-    print(
-        "Vel: "
-        + str(v)
-        + "Normalvector: "
-        + str(n)
-        + "NEW Vel: "
-        + str(v - 2 * np.dot(v, n) * n)
-    )
+    # print(
+    #     "Vel: "
+    #     + str(v)
+    #     + "Normalvector: "
+    #     + str(n)
+    #     + "NEW Vel: "
+    #     + str(v - 2 * np.dot(v, n) * n)
+    # )
     return np.array(v - 2 * np.dot(v, n) * n)
 
 
-def get_bbox_pts(wall: Wall):
+def get_bbox_pts(wall: Wall) -> npdarr:
     offset = wall.offset
-    if wall.pos[0] < wall.plains_vec[0] and wall.pos[0] < wall.plains_vec_2[0]:
-        first_bbox_x_pt = wall.pos[0]
-    elif wall.plains_vec[0] < wall.pos[0] and wall.plains_vec[0] < wall.plains_vec_2[0]:
-        first_bbox_x_pt = wall.plains_vec[0]
-    else:
-        first_bbox_x_pt = wall.plains_vec_2[0]
+    points = np.array([wall.pos, wall.plains_vec, wall.plains_vec_2])
+    min_coords = points.min(axis=0) - offset
+    max_coords = points.max(axis=0)
 
-    if wall.pos[1] < wall.plains_vec[1] and wall.pos[1] < wall.plains_vec_2[1]:
-        first_bbox_y_pt = wall.pos[1]
-    elif wall.plains_vec[1] < wall.pos[1] and wall.plains_vec[1] < wall.plains_vec_2[1]:
-        first_bbox_y_pt = wall.plains_vec[1]
-    else:
-        first_bbox_y_pt = wall.plains_vec_2[1]
+    return np.array([min_coords, max_coords])
 
-    if wall.pos[2] < wall.plains_vec[2] and wall.pos[2] < wall.plains_vec_2[2]:
-        first_bbox_z_pt = wall.pos[2]
-    elif wall.plains_vec[2] < wall.pos[2] and wall.plains_vec[2] < wall.plains_vec_2[2]:
-        first_bbox_z_pt = wall.plains_vec[2]
+
+def get_bbox_pts_n(wall: Wall) -> npdarr:
+    offset = wall.offset
+    normal_vec = wall.normal_vec
+    if np.isclose(normal_vec[0], 0) and np.isclose(normal_vec[1], 0):
+        perp1 = np.array([1, 0, 0])
     else:
-        first_bbox_z_pt = wall.plains_vec_2[2]
-    first_bbox_pts = [
-        first_bbox_x_pt - offset,
-        first_bbox_y_pt - offset,
-        first_bbox_z_pt - offset,
+        perp1 = np.cross(normal_vec, np.array([0, 0, 1]))
+    perp1 = perp1 / np.linalg.norm(perp1)
+    perp2 = np.cross(normal_vec, perp1)
+    perp2 = perp2 / np.linalg.norm(perp2)
+
+    perp1 *= offset
+    perp2 *= offset
+
+    corners = [
+        wall.pos + perp1 + perp2,
+        wall.pos + perp1 - perp2,
+        wall.pos - perp1 + perp2,
+        wall.pos - perp1 - perp2,
     ]
-
-    if wall.pos[0] > wall.plains_vec[0] and wall.pos[0] > wall.plains_vec_2[0]:
-        last_bbox_x_pt = wall.pos[0]
-    elif wall.plains_vec[0] > wall.pos[0] and wall.plains_vec[0] > wall.plains_vec_2[0]:
-        last_bbox_x_pt = wall.plains_vec[0]
-    else:
-        last_bbox_x_pt = wall.plains_vec_2[0]
-
-    if wall.pos[1] > wall.plains_vec[1] and wall.pos[1] > wall.plains_vec_2[1]:
-        last_bbox_y_pt = wall.pos[1]
-    elif wall.plains_vec[1] > wall.pos[1] and wall.plains_vec[1] > wall.plains_vec_2[1]:
-        last_bbox_y_pt = wall.plains_vec[1]
-    else:
-        last_bbox_y_pt = wall.plains_vec_2[1]
-
-    if wall.pos[2] > wall.plains_vec[2] and wall.pos[2] > wall.plains_vec_2[2]:
-        last_bbox_z_pt = wall.pos[2]
-    elif wall.plains_vec[2] > wall.pos[2] and wall.plains_vec[2] > wall.plains_vec_2[2]:
-        last_bbox_z_pt = wall.plains_vec[2]
-    else:
-        last_bbox_z_pt = wall.plains_vec_2[2]
-    last_bbox_pts = [
-        last_bbox_x_pt + offset,
-        last_bbox_y_pt + offset,
-        last_bbox_z_pt + offset,
-    ]
-    return np.array([first_bbox_pts, last_bbox_pts])
+    corners = np.array(corners)
+    min_coords = corners.min(axis=0)
+    max_coords = corners.max(axis=0)
+    return np.array([min_coords, max_coords])
 
 
 def plotWall(
@@ -145,6 +130,7 @@ def plotWall(
         if not np.any(mask):
             return
         ax.plot_surface(X, Y, Z, alpha=0.7)
+    elif wall.normal_vec[0] != 0:
         y = np.linspace(y_min, y_max, 100)
         z = np.linspace(z_min, z_max, 100)
         y, z = np.meshgrid(y, z)
