@@ -7,92 +7,96 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from lib.Particle import Particle
 from lib.constants import ZERO_VEC, npdarr, Axes
 from lib.Object import Object
-from lib.functions import cross_vec
 
 
 class Wall(Object):
-    "A Wall in a 3-Dimensinal Space"
+    """A Wall in a 3-Dimensinal Space which allows particles to bounce of it
+
+
+    Attributes:
+        pos (npdarr): The first point of the Wall (required)
+        plains_vec (npdarr): The second point of the Wall (required)
+        plains_vec2 (npdarr): The third point of the Wall (required)
+        color (string): The color of the Wall (default: "#FF0000")
+        opacity (float): The opacity of the Wall (default: 1.0)
+    """
 
     def __init__(
         # Formula for plains
         # a*x + b*y + c*z + d = 0
-        # normal_vec[0]*x + normal_vec[1]*y + normal_vec[2]*z + distance_origin = 0
+        # normal_vec[0] * x + normal_vec[1] * y + normal_vec[2] * z + distance_origin = 0
         self,
+        # Defaults of the Wall Class
         pos: npdarr = np.copy(ZERO_VEC),
         plains_vec: npdarr = np.copy(ZERO_VEC),
         plains_vec_2: npdarr = np.copy(ZERO_VEC),
-        norm_vec: npdarr = np.array([ZERO_VEC]),
-        dis_origin: float = 0,
-        offset: float = 0,
+        color: str = "#0000FF",
+        opacity: float = 1.0,
     ) -> None:
-        print(f"start_pos: {pos}")
+        # Initialize the Object with the given Attributes
         self.pos = pos
         self.plains_vec = plains_vec
         self.plains_vec_2 = plains_vec_2
+        self.color = color
+        self.opacity = opacity
+
+        # Checking if all required Attributes are set
+        if np.all(plains_vec == 0) or np.all(plains_vec_2 == 0):
+            raise ValueError(
+                'The Wall needs to have 3 Points as Arguments and only Attribute "pos" can be the zero vector'
+            )
+
+            # Calculates the Normal Vector and normalizes it
+
+        self.normal_vec = np.cross(pos - plains_vec, pos - plains_vec_2)
+        self.normal_vec = self.normal_vec / np.linalg.norm(self.normal_vec)
+
+        # Calculates the Distance from Origin (d in the formular for plains)
+        self.distance_origin = -pos.dot(self.normal_vec)
+        # Gets the LLF and RHB Points from the given Points
+        bbox_pts = get_bbox_pts(self)
+        self.min_cords = bbox_pts[0]
+        self.max_cords = bbox_pts[1]
+
+        print("POS: " + str(pos))
         print("P1: " + str(plains_vec) + " P2: " + str(plains_vec_2))
         print("AB: " + str(pos - plains_vec) + "AC: " + str(pos - plains_vec_2))
-        self.normal_vec = cross_vec(plains_vec - pos, plains_vec_2 - pos)
-        self.normal_vec = self.normal_vec / np.linalg.norm(self.normal_vec)
-        self.distance_origin = -pos.dot(self.normal_vec)
-        if not np.all(norm_vec == 0) and dis_origin != 0:
-            self.normal_vec = norm_vec
-            self.distance_origin = dis_origin
-        self.offset = offset
         print("Normalvector: " + str(self.normal_vec))
         print("Distance to origin: " + str(self.distance_origin))
-        bbox_pts = get_bbox_pts(self)
-        print("Bounding box points " + str(bbox_pts))
-        super().__init__(pos, bbox_pts=bbox_pts)
+        print("BBox: " + str(bbox_pts))
+
+        # Initialzies the super class Object with given Attributes
+        super().__init__(pos, bbox_pts=bbox_pts, color=color, opacity=opacity)
 
 
 def wall_collision(particle: Particle, wall: Wall) -> npdarr:
+    """
+    Returns the new Velocity Vector the Particle should have when hitting the Wall
+
+    Parameters:
+     particle (Particle): The Particle colliding with the Wall
+     wall (Wall): The Wall the Particle collides with
+    """
     v = particle.vel
     n = wall.normal_vec
     if np.all(wall.normal_vec == 0):
-        print("The velocity is the zero vector")
-    # print(
-    #     "Vel: "
-    #     + str(v)
-    #     + "Normalvector: "
-    #     + str(n)
-    #     + "NEW Vel: "
-    #     + str(v - 2 * np.dot(v, n) * n)
-    # )
+        raise ValueError("The Normalvector is the zero vector")
     return np.array(v - 2 * np.dot(v, n) * n)
 
 
 def get_bbox_pts(wall: Wall) -> npdarr:
-    offset = wall.offset
+    """
+    Return the LLF RBH Points of the Wall
+
+    Parameter
+        wall (Wall): The wall where the points are beeing calculated from
+
+    Return:
+        np.array([min_coords, max_coords]): returns a Vector of the Lowest Points and the highest Points of the Wall
+    """
     points = np.array([wall.pos, wall.plains_vec, wall.plains_vec_2])
-    min_coords = points.min(axis=0) - offset
+    min_coords = points.min(axis=0)
     max_coords = points.max(axis=0)
-
-    return np.array([min_coords, max_coords])
-
-
-def get_bbox_pts_n(wall: Wall) -> npdarr:
-    offset = wall.offset
-    normal_vec = wall.normal_vec
-    if np.isclose(normal_vec[0], 0) and np.isclose(normal_vec[1], 0):
-        perp1 = np.array([1, 0, 0])
-    else:
-        perp1 = np.cross(normal_vec, np.array([0, 0, 1]))
-    perp1 = perp1 / np.linalg.norm(perp1)
-    perp2 = np.cross(normal_vec, perp1)
-    perp2 = perp2 / np.linalg.norm(perp2)
-
-    perp1 *= offset
-    perp2 *= offset
-
-    corners = [
-        wall.pos + perp1 + perp2,
-        wall.pos + perp1 - perp2,
-        wall.pos - perp1 + perp2,
-        wall.pos - perp1 - perp2,
-    ]
-    corners = np.array(corners)
-    min_coords = corners.min(axis=0)
-    max_coords = corners.max(axis=0)
     return np.array([min_coords, max_coords])
 
 
@@ -106,41 +110,90 @@ def plotWall(
     z_min: float,
     z_max: float,
 ):
-    x = np.linspace(x_min, x_max, 100)
-    y = np.linspace(x_min, x_max, 100)
-    x, y = np.meshgrid(x, y)
+    """
+    Plotts the given Wall on the given Axis
+
+    Parameter:
+        wall (Wall): The Wall that is beeing plotted
+        ax (Axes): The Axes the Wall is beeing plotted on
+        x_min (float): The minimum Value the x-Coordinates are plotted
+        x_max (float): The maximum Value the x-Coordinates are plotted
+        y_min (float): The minimum Value the y-Coordinates are plotted
+        y_max (float): The maximum Value the y-Coordinates are plotted
+        z_min (float): The minimum Value the z-Coordinates are plotted
+        z_max (float): The maximum Value the z-Coordinates are plotted
+    """
+    # Sets the Limit to the given Parameter or the BBoxes (The one that Limits more)
+    x_min = max(y_min, wall.min_cords[0])
+    x_max = min(y_max, wall.max_cords[0])
+    y_min = max(y_min, wall.min_cords[1])
+    y_max = min(y_max, wall.max_cords[1])
+    z_min = max(z_min, wall.min_cords[2])
+    z_max = min(z_max, wall.max_cords[2])
     if wall.normal_vec[2] != 0:
+        x = np.linspace(x_min, x_max, 100)
+        y = np.linspace(x_min, x_max, 100)
+        x, y = np.meshgrid(x, y)
+        # Calculates z based on the multiple Values of x,y with the Formular for Plains transformed to:
+        # z = (-d - a * x -b * y) / c
         z = (
             -wall.distance_origin - wall.normal_vec[0] * x - wall.normal_vec[1] * y
         ) / wall.normal_vec[2]
-        # z = np.clip(z, z_min, z_max)
-        mask = (z >= z_min) & (z <= z_max)
+        # Saves all Values within the boundries set by the parameters and the BBox
+        mask = (
+            (z >= z_min)
+            & (z <= z_max)
+            & (z >= wall.min_cords[2])
+            & (z <= wall.max_cords[2])
+        )
         z = np.ma.masked_where(~mask, z)
+        # if there aren't any valid values stop plotting
         if not np.any(mask):
             return
-        ax.plot_surface(x, y, z, alpha=0.7)
+        # Plots the Wall on the Axis
+        ax.plot_surface(x, y, z, alpha=wall.opacity, color=wall.color)
     elif wall.normal_vec[1] != 0:
         x = np.linspace(x_min, x_max, 100)
         z = np.linspace(z_min, z_max, 100)
-        X, Z = np.meshgrid(x, z)
-        Y = (-wall.normal_vec[0] * x - wall.distance_origin) / wall.normal_vec[1]
-        # Y = np.clip(Y, y_min, y_max)
-        mask = (Y >= y_min) & (Y <= y_max)
-        Y = np.ma.masked_where(~mask, Y)
+        x, z = np.meshgrid(x, z)
+        # If the normal vector z-Coordinate is zero it isn't possible to calculate z, because a division with 0 is caused
+        # The plains formular is then transformed to:
+        #  y = (-d - a * x) / b
+        y = (-wall.normal_vec[0] * x - wall.distance_origin) / wall.normal_vec[1]
+        # Saves all Values within the boundries set by the parameters and the BBox
+        mask = (
+            (y >= y_min)
+            & (y <= y_max)
+            & (y >= wall.min_cords[1])
+            & (y <= wall.max_cords[1])
+        )
+        y = np.ma.masked_where(~mask, y)
+        # if there aren't any valid values stop plotting
         if not np.any(mask):
             return
-        ax.plot_surface(X, Y, Z, alpha=0.7)
+        # Plots the Wall on the Axis
+        ax.plot_surface(x, y, z, alpha=wall.opacity, color=wall.color)
     elif wall.normal_vec[0] != 0:
         y = np.linspace(y_min, y_max, 100)
         z = np.linspace(z_min, z_max, 100)
         y, z = np.meshgrid(y, z)
-        x = np.full_like(x, -wall.distance_origin / wall.normal_vec[0])
-        # x = np.clip(x, x_min, x_max)
-        mask = (x >= x_min) & (x <= x_max)
+        # If the normal vektor only has a value that is not 0 in the x-Coordinate
+        # The formular for planes is then transformed to:
+        # x = -d / a
+        x = np.full_like(y, -wall.distance_origin / wall.normal_vec[0])
+        mask = (
+            (x >= x_min)
+            & (x <= x_max)
+            & (x >= wall.min_cords[0])
+            & (x <= wall.max_cords[0])
+        )
         x = np.ma.masked_where(~mask, x)
+        # if there aren't any valid values stop plotting
         if not np.any(mask):
             return
-        ax.plot_surface(x, y, z, alpha=0.7)
+        # Plots the Wall on the Axis
+        ax.plot_surface(x, y, z, alpha=wall.opacity, color=wall.color)
+    # If the normal vector is the zero vector sent an error 
     elif np.all(wall.normal_vec == 0):
         sys.exit("The Normalen Vector which was calculated is the Zero Vector")
 

@@ -147,12 +147,9 @@ class Simulation:
                     # self.collision_matrix[time, i] = 1
                     # self.collision_matrix[time, j] = 1
             if isinstance(obj_1, Particle) and isinstance(obj_2, Wall):
-                # p = obj_1.pos
-                # q = obj_2.pos
-                # n = obj_2.normal_vec
-                # distance Formular for planes from point
                 d = calc_distance(obj_1.pos, obj_2.normal_vec, obj_2.distance_origin)
                 if d <= obj_1.rad:
+                    #When the distance is close enough to hit the wall calculate the new Velocity and set it
                     obj_1.vel = wall_collision(obj_1, obj_2)
 
 

@@ -17,14 +17,6 @@ def distance(vec1: npdarr, vec2: npdarr) -> np.float64:
     return np.linalg.norm(vec1 - vec2)
 
 
-def skalarproduct(vec1: npdarr, vec2: npdarr) -> float:
-    return vec1[0] * vec2[0] + vec1[1] * vec2[1] + vec1[2] * vec2[2]
-
-
-def cross_vec(vec1: npdarr, vec2: npdarr):
-    return np.cross(vec1, vec2)
-
-
 def value_vec(vec1: npdarr) -> float:
     return abs(
         math.sqrt(math.pow(vec1[0], 2) + math.pow(vec1[1], 2) + math.pow(vec1[2], 2))
@@ -32,9 +24,25 @@ def value_vec(vec1: npdarr) -> float:
 
 
 def calc_distance(point: npdarr, normal_vec: npdarr, distance_origin: float) -> float:
+    """
+    Return the distance between a point and a plane
+
+    Parameter:
+        point (npdarr): The current position of the point
+        normal_vec (npdarr): The normal vector of the plane
+        distance_origin (npdarr) : The distance from the origin 
+        
+    Returns: 
+        distance (float): The distance between a point and a plane
+    """
     normal_vec_norm: float = np.linalg.norm(normal_vec)
     if not np.any(normal_vec):
-        print("Can't calculate distance with zero normal vector")
+        print("Can't calculate distance with the zero vector as the normal vector")
+        # The Distance formular for a plane in  Coordinate shape is:
+        # d = |n1 * p1 + n2 * p2 + n3 * p3 + k|/sqrt(n1^2 + n2^2 + n3^2)
+        # p being the position of the point
+        # n being the normal vector of the plane
+        # k the distance to origin
     return np.abs(np.dot(normal_vec, point) + distance_origin) / normal_vec_norm
 
 
