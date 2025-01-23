@@ -14,9 +14,9 @@ class Wall(Object):
 
 
     Attributes:
-        pos (npdarr): The first point of the Wall (required)
-        plains_vec (npdarr): The second point of the Wall (required)
-        plains_vec2 (npdarr): The third point of the Wall (required)
+        pos (npdarr): The corner point of the Wall (required)
+        plains_vec (npdarr): One side of the Wall from the pos (required)
+        plains_vec2 (npdarr): The other side of the Wall (required)
         color (string): The color of the Wall (default: "#FF0000")
         opacity (float): The opacity of the Wall (default: 1.0)
     """
