@@ -53,9 +53,9 @@ if __name__ == "__main__":
             )
             overlap = False
             # Checks the Distance to all created Particles and if the Particle is too close create a new one and check again
-            for plotted_particle in Particles:
-                distance = np.linalg.norm(pos - plotted_particle.pos)
-                if distance < rad + plotted_particle.rad:
+            for added_particle in Particles:
+                distance = np.linalg.norm(pos - added_particle.pos)
+                if distance < rad + added_particle.rad:
                     overlap = True
                     break
             if not overlap:
@@ -67,23 +67,31 @@ if __name__ == "__main__":
     Walls = [
         Wall(
             pos=np.array([100, 0, 0]),
-            plains_vec=np.array([100, 500, 0]),
-            plains_vec_2=np.array([100, 0, 500]),
+            corner=np.array([100, 500, 0]),
+            corner_2=np.array([100, 0, 500]),
+            opacity=0.2,
+            color="b"
         ),
         Wall(
             pos=np.array([0, 0, 100]),
-            plains_vec=np.array([500, -100, 100]),
-            plains_vec_2=np.array([-100, 500, 100]),
+            corner=np.array([500, 0, 100]),
+            corner_2=np.array([0, 500, 100]),
+            opacity=0.2,
+            color="r"
         ),
         Wall(
             pos=np.array([400, 0, 0]),
-            plains_vec=np.array([400, -100, 500]),
-            plains_vec_2=np.array([400, 500, -100]),
+            corner=np.array([400, 0, 500]),
+            corner_2=np.array([400, 500, 0]),
+            opacity= 0.2,
+            color="y"
         ),
         Wall(
             pos=np.array([0, 0, 400]),
-            plains_vec=np.array([700, -200, 400]),
-            plains_vec_2=np.array([-200, 700, 400]),
+            corner=np.array([500, 0, 400]),
+            corner_2=np.array([0, 700, 400]),
+            opacity= 0.2,
+            color="g",
         ),
     ]
     simulation.add_objects(Walls)
@@ -111,7 +119,7 @@ if __name__ == "__main__":
     for wall in simulation.wall_list:
         plotWall(wall, ax, x_min, x_max, y_min, y_max, z_min, z_max)
 
-    # Sets up the values to plot a sphere 
+    # Sets up the values to plot a sphere
     theta = np.linspace(0, 2 * np.pi, 50)
     phi = np.linspace(0, np.pi, 50)
     theta, phi = np.meshgrid(theta, phi)
@@ -135,7 +143,7 @@ if __name__ == "__main__":
 
     def update_sphere_animation(frame):
         global sphere_plots
-        # Delete the Plots of the spheres from the previous frame and Plot the spheres on the new Posistion 
+        # Delete the Plots of the spheres from the previous frame and Plot the spheres on the new Posistion
         for i, particle in enumerate(simulation.particle_list):
             pos = simulation.pos_matrix[frame][i]
             sphere_plots[i].remove()
