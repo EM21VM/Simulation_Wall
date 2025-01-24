@@ -14,7 +14,7 @@ from lib.Wall import Wall, plotWall
 if __name__ == "__main__":
     print("Testing the Wall class")
     L = 500.0
-    particle_num = 1
+    particle_num = 25
     min_pos = 100
     max_pos = 400
     min_vel = 10
@@ -30,6 +30,7 @@ if __name__ == "__main__":
         boundaries=[Boundary.WALL, Boundary.WALL, Boundary.WALL],
     )
     Particles = []
+    Original_POS = []
     for i in range(particle_num):
         while True:
             rad = random.randint(min_rad, max_rad)
@@ -56,15 +57,15 @@ if __name__ == "__main__":
                     break
             if not overlap:
                 Particles.append(Particle(pos=pos, vel=vel, rad=rad, mass=mass))
+                Original_POS.append(pos)
                 break
-
     simulation.add_objects(Particles)
     Walls = [
         Wall(
             pos=np.array([100, 0, 0]),
             plains_vec=np.array([100, 500, 0]),
             plains_vec_2=np.array([100, 0, 500]),
-            opacity= 0.5
+            opacity=0.5,
         ),
         # Wall(
         #     pos=np.array([0, 0, 100]),
@@ -90,6 +91,7 @@ if __name__ == "__main__":
     box = pv.Box(bounds=(0, L, 0, L, 0, L))
     plotter.add_mesh(box, color="blue", style="wireframe")
     plotter.add_axes(line_width=3, color="black")
+    plotter.show_bounds(grid="front", ticks="inside", all_edges=True)
     sphere_plots = []
     for particle in simulation.particle_list:
         sphere = pv.Sphere(center=particle.pos, radius=particle.rad)
@@ -123,19 +125,24 @@ if __name__ == "__main__":
             plotter.add_mesh(
                 pv.StructuredGrid(x, y, z), color=wall.color, opacity=wall.opacity
             )
+
     def update_plot(frame):
         global sphere_plots
         # Update the position of existing meshes
         for i, particle in enumerate(simulation.particle_list):
             pos = simulation.pos_matrix[frame][i]
             print("POS After: " + str(pos))
-        sphere_plots[i].SetPosition(pos)  # Update position of the existing mesh
-        plotter.render()
+            print(f"Frame {frame}, Particle {i}, Position: {pos}")
+            print(f"Particle {i} scale: {sphere_plots[i].GetScale()}")
+            # plotter.remove_actor(sphere_plots[i])
+            # sphere = pv.Sphere(center=pos, radius=particle.rad)
+            # actor = plotter.add_mesh(sphere, color=particle.color)
+            # sphere_plots[i] = actor
+            sphere_plots[i].SetPosition(pos - Original_POS[i])  # Update position of the existing mesh
         plotter.update()
+        plotter.render()
 
     simulation.run()
     plotter.show(interactive_update=True)
     for frame in range(simulation.num_steps):
         update_plot(frame)
-
-    plotter.show()
